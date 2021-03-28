@@ -16,6 +16,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import transforms, datasets, models
 
+from matplotlib import pyplot as plt
+
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 print(DEVICE)
@@ -24,8 +26,8 @@ print(DEVICE)
 
 """## 하이퍼파라미터 """
 
-EPOCHS     = 30
-BATCH_SIZE = 1
+EPOCHS     = 20
+BATCH_SIZE = 32
 
 """## 데이터셋 불러오기"""
 
@@ -34,6 +36,7 @@ train_loader = torch.utils.data.DataLoader(
                    train=True,
                    download=True,
                    transform=transforms.Compose([
+                       transforms.RandomHorizontalFlip(),
                        transforms.ToTensor(),
                        transforms.Normalize((0.5,),
                                             (0.5,))])),
@@ -63,17 +66,25 @@ import torchvision.models as models
 class Model(nn.Module):
     def __init__(self):
       super(Model, self).__init__()
-      self.conv1 = nn.Conv2d(3, 16, 3)
-      self.conv2 = nn.Conv2d(16, 32, 3)
-      self.fc1 = nn.Linear(1152, 50)
-      self.fc2 = nn.Linear(50, 10)
+      self.conv1 = nn.Conv2d(3, 32, 3)
+      self.conv2 = nn.Conv2d(32, 64, 3)
+      self.conv3 = nn.Conv2d(64, 64, 3)
+      # self.conv4 = nn.Conv2d(64, 128, 3)
+      self.conv_drop_out = nn.Dropout2d(p=0.15)
+      self.fc1 = nn.Linear(256, 128)
+      self.fc2 = nn.Linear(128, 64)
+      self.fc3 = nn.Linear(64, 10)
+      self.fc_drop_out = nn.Dropout2d(p=0.3)
 
     def forward(self, x):
       x = F.relu(F.max_pool2d(self.conv1(x), 2))
-      x = F.relu(F.max_pool2d(self.conv2(x), 2))
-      x = x.view(-1, 1152)
-      x = F.relu(self.fc1(x))
-      x = self.fc2(x)
+      x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv2(x)), 2))
+      x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv3(x)), 2))
+      # x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv4(x)), 2))
+      x = x.view(-1, 256)
+      x = F.relu(self.fc_drop_out(self.fc1(x)))
+      x = F.relu(self.fc_drop_out(self.fc2(x)))
+      x = self.fc3(x)
       return x
 
 model = Model()
@@ -88,7 +99,7 @@ model = Model()
 
 model.to(DEVICE)
 
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)#0.1 vs 0.001
+optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)#0.1 vs 0.001
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 """## 학습하기"""
@@ -128,10 +139,23 @@ def evaluate(model, test_loader):
 
 """## 학습"""
 
+loss = []
+accuracy = []
 for epoch in range(1, EPOCHS + 1):
     train(model, train_loader, optimizer, epoch)
     scheduler.step()
     test_loss, test_accuracy = evaluate(model, test_loader)
     
+    loss.append(test_loss)
+    accuracy.append(test_accuracy)
     print('[{}] Test Loss: {:.4f}, Accuracy: {:.2f}%'.format(
           epoch, test_loss, test_accuracy))
+plt.plot(loss)
+plt.plot(accuracy)
+plt.ylim(0, 100)
+
+plt.plot(loss)
+plt.plot(accuracy)
+plt.ylim(0, 100)
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
