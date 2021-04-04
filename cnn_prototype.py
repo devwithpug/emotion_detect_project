@@ -15,40 +15,53 @@ import torchvision
 import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import transforms, datasets, models
-
+import os
 from matplotlib import pyplot as plt
+from PIL import Image
+import numpy as np
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 print(DEVICE)
 
+# !pip install kaggle --upgrade
 
+# os.environ['KAGGLE_USERNAME'] = 'jungyuchoi'
+# os.environ['KAGGLE_KEY'] = '9431599f2458bdba977477e62d1dd272'
+# !kaggle datasets download -d ananthu017/emotion-detection-fer
+# !unzip '*.zip'
+
+!ls
+torch.cuda.empty_cache()
+import gc
+
+gc.collect()
 
 """## 하이퍼파라미터 """
 
 EPOCHS     = 20
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 
 """## 데이터셋 불러오기"""
 
-train_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('./.data',
-                   train=True,
-                   download=True,
-                   transform=transforms.Compose([
-                       transforms.RandomHorizontalFlip(),
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.5,),
-                                            (0.5,))])),
-    batch_size=BATCH_SIZE, shuffle=True)
-test_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('./.data',
-                   train=False, 
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.5,),
-                                            (0.5,))])),
-    batch_size=BATCH_SIZE, shuffle=True)
+trans = transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+train_data = torchvision.datasets.ImageFolder(root='./train', transform=trans)
+test_data = torchvision.datasets.ImageFolder(root='./test', transform=trans)
+
+train_loader = torch.utils.data.DataLoader(dataset = train_data, batch_size = BATCH_SIZE, shuffle = True)
+test_loader = torch.utils.data.DataLoader(dataset = test_data, batch_size = BATCH_SIZE, shuffle = True)
+
+classes = ('angry', 'disgusted', 'fearful', 'happy', 'neutral', 'sad', 'surprised')
+
+dataiter = iter(train_loader)
+images, labels = dataiter.next()
+print(images.shape)
+img = Image.open('./train/angry/im1.png')
+plt.imshow(np.asarray(img))
+print(labels)
 
 """## 모델
 
@@ -66,22 +79,30 @@ import torchvision.models as models
 class Model(nn.Module):
     def __init__(self):
       super(Model, self).__init__()
-      self.conv1 = nn.Conv2d(3, 32, 3)
-      self.conv2 = nn.Conv2d(32, 64, 3)
-      self.conv3 = nn.Conv2d(64, 64, 3)
-      # self.conv4 = nn.Conv2d(64, 128, 3)
+      self.conv1 = nn.Conv2d(3, 64, 3)
+      self.conv2 = nn.Conv2d(64, 64, 3)
+      self.conv3 = nn.Conv2d(64, 128, 3)
+      self.conv4 = nn.Conv2d(128, 128, 3)
+      self.conv5 = nn.Conv2d(128, 512, 3)
+      self.conv6 = nn.Conv2d(512, 512, 3)
+      self.bn_64 = nn.BatchNorm2d(64)
+      self.bn_128 = nn.BatchNorm2d(128)
+      self.bn_256 = nn.BatchNorm2d(512)
       self.conv_drop_out = nn.Dropout2d(p=0.15)
-      self.fc1 = nn.Linear(256, 128)
-      self.fc2 = nn.Linear(128, 64)
-      self.fc3 = nn.Linear(64, 10)
+      self.fc1 = nn.Linear(2048, 128)
+      self.fc2 = nn.Linear(128, 128)
+      self.fc3 = nn.Linear(128, 7)
+      self.bn_1d = nn.BatchNorm1d(128)
       self.fc_drop_out = nn.Dropout2d(p=0.3)
 
     def forward(self, x):
-      x = F.relu(F.max_pool2d(self.conv1(x), 2))
-      x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv2(x)), 2))
-      x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv3(x)), 2))
-      # x = F.relu(F.max_pool2d(self.conv_drop_out(self.conv4(x)), 2))
-      x = x.view(-1, 256)
+      x = F.relu(self.bn_64(self.conv1(x)))
+      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_64(self.conv2(x)), 2)))
+      x = F.relu(self.bn_128(self.conv3(x)))
+      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_128(self.conv4(x)), 2)))
+      x = F.relu(self.bn_256(self.conv5(x)))
+      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_256(self.conv6(x)), 2)))
+      x = x.view(-1, 2048)
       x = F.relu(self.fc_drop_out(self.fc1(x)))
       x = F.relu(self.fc_drop_out(self.fc2(x)))
       x = self.fc3(x)
@@ -93,7 +114,7 @@ model = Model()
 # 기존 ResNet 모델 FC layer의 in_features값을 할당
 #num_input을 nn.Linear에 넣고 수정
 
-# model.fc = nn.Linear(model.fc.in_features, 10)
+# model.fc = nn.Linear(model.fc.in_features, 7)
 
 """## 준비"""
 
@@ -150,10 +171,6 @@ for epoch in range(1, EPOCHS + 1):
     accuracy.append(test_accuracy)
     print('[{}] Test Loss: {:.4f}, Accuracy: {:.2f}%'.format(
           epoch, test_loss, test_accuracy))
-plt.plot(loss)
-plt.plot(accuracy)
-plt.ylim(0, 100)
-
 plt.plot(loss)
 plt.plot(accuracy)
 plt.ylim(0, 100)
