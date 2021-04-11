@@ -15,6 +15,7 @@ import torchvision
 import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import transforms, datasets, models
+from torchvision.utils import make_grid
 import os
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -24,12 +25,9 @@ USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 print(DEVICE)
 
-# !pip install kaggle --upgrade
 
-# os.environ['KAGGLE_USERNAME'] = 'jungyuchoi'
-# os.environ['KAGGLE_KEY'] = '9431599f2458bdba977477e62d1dd272'
-# !kaggle datasets download -d ananthu017/emotion-detection-fer
-# !unzip '*.zip'
+
+
 
 !ls
 torch.cuda.empty_cache()
@@ -40,13 +38,15 @@ gc.collect()
 """## 하이퍼파라미터 """
 
 EPOCHS     = 20
-BATCH_SIZE = 128
+BATCH_SIZE = 16
 
 """## 데이터셋 불러오기"""
 
 trans = transforms.Compose([
+                            transforms.Grayscale(),
+                            transforms.RandomHorizontalFlip(),
                             transforms.ToTensor(),
-                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+                            transforms.Normalize((0.5,), (0.5,))])
 
 train_data = torchvision.datasets.ImageFolder(root='./train', transform=trans)
 test_data = torchvision.datasets.ImageFolder(root='./test', transform=trans)
@@ -54,7 +54,7 @@ test_data = torchvision.datasets.ImageFolder(root='./test', transform=trans)
 train_loader = torch.utils.data.DataLoader(dataset = train_data, batch_size = BATCH_SIZE, shuffle = True)
 test_loader = torch.utils.data.DataLoader(dataset = test_data, batch_size = BATCH_SIZE, shuffle = True)
 
-classes = ('angry', 'disgusted', 'fearful', 'happy', 'neutral', 'sad', 'surprised')
+classes = ['neutral', 'fearful', 'sad', 'happy', 'surprised', 'angry', 'disgusted']
 
 dataiter = iter(train_loader)
 images, labels = dataiter.next()
@@ -79,32 +79,27 @@ import torchvision.models as models
 class Model(nn.Module):
     def __init__(self):
       super(Model, self).__init__()
-      self.conv1 = nn.Conv2d(3, 64, 3)
-      self.conv2 = nn.Conv2d(64, 64, 3)
-      self.conv3 = nn.Conv2d(64, 128, 3)
-      self.conv4 = nn.Conv2d(128, 128, 3)
-      self.conv5 = nn.Conv2d(128, 512, 3)
-      self.conv6 = nn.Conv2d(512, 512, 3)
-      self.bn_64 = nn.BatchNorm2d(64)
-      self.bn_128 = nn.BatchNorm2d(128)
-      self.bn_256 = nn.BatchNorm2d(512)
-      self.conv_drop_out = nn.Dropout2d(p=0.15)
-      self.fc1 = nn.Linear(2048, 128)
-      self.fc2 = nn.Linear(128, 128)
+      self.conv1 = nn.Conv2d(1, 16, 3)
+      self.conv2 = nn.Conv2d(16, 32, 3)
+      self.conv3 = nn.Conv2d(32, 64, 3)
+      self.conv4 = nn.Conv2d(64, 32, 3)
+      self.fc1 = nn.Linear(2048, 1024)
+      self.fc2 = nn.Linear(1024, 128)
       self.fc3 = nn.Linear(128, 7)
-      self.bn_1d = nn.BatchNorm1d(128)
-      self.fc_drop_out = nn.Dropout2d(p=0.3)
+      self.batch_norm_16 = nn.BatchNorm2d(16)
+      self.batch_norm_32 = nn.BatchNorm2d(32)
+      self.batch_norm_64 = nn.BatchNorm2d(64)
+      self.drop_out = nn.Dropout2d(p=0.3)
 
     def forward(self, x):
-      x = F.relu(self.bn_64(self.conv1(x)))
-      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_64(self.conv2(x)), 2)))
-      x = F.relu(self.bn_128(self.conv3(x)))
-      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_128(self.conv4(x)), 2)))
-      x = F.relu(self.bn_256(self.conv5(x)))
-      x = F.relu(self.conv_drop_out(F.max_pool2d(self.bn_256(self.conv6(x)), 2)))
+      x = F.relu(self.batch_norm_16(self.conv1(x)))
+      x = F.relu(self.drop_out(F.max_pool2d(self.batch_norm_32(self.conv2(x)), 2)))
+      x = F.relu(self.drop_out(F.max_pool2d(self.batch_norm_64(self.conv3(x)), 2)))
+      x = F.relu(self.drop_out(self.batch_norm_32(self.conv4(x))))
       x = x.view(-1, 2048)
-      x = F.relu(self.fc_drop_out(self.fc1(x)))
-      x = F.relu(self.fc_drop_out(self.fc2(x)))
+
+      x = F.relu(self.drop_out(self.fc1(x)))
+      x = F.relu(self.drop_out(self.fc2(x)))
       x = self.fc3(x)
       return x
 
