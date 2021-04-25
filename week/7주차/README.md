@@ -26,7 +26,8 @@
 ***
 # 결과
 input   
-![image](https://imgnn.seoul.co.kr/img/upload/2015/05/07/SSI_20150507184218_V.jpg)
+![image](https://imgnn.seoul.co.kr/img/upload/2015/05/07/SSI_20150507184218_V.jpg)       
+
 output   
 ![image](https://media.discordapp.net/attachments/820225658969915406/835801278650122259/unknown.png)
 ***
