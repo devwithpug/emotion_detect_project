@@ -49,11 +49,11 @@ class Model(nn.Module):
 
 model = Model()
 
-model.load_state_dict(torch.load('/Volumes/SSD/OneDrive - kyonggi.ac.kr/jetbrains/PycharmProjects/faceproject/templates/model.pt', map_location=DEVICE))
+model.load_state_dict(torch.load('/Users/subin/PycharmProjects/emotion_detect_project/django/faceproject/templates/model.pt', map_location=DEVICE))
 # model.load_state_dict(torch.load('/templates/model.pt', map_location=DEVICE))
 model.eval()
 
-facecasc = cv2.CascadeClassifier("/Volumes/SSD/OneDrive - kyonggi.ac.kr/jetbrains/PycharmProjects/faceproject/templates/haarcascade_frontalface_default.xml")
+facecasc = cv2.CascadeClassifier("/Users/subin/PycharmProjects/emotion_detect_project/django/faceproject/templates/haarcascade_frontalface_default.xml")
 # facecasc = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
 
