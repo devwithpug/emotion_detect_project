@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 
 class FaceSerializer(serializers.ModelSerializer):
-    content = serializers.CharField(required=True)
+    content = serializers.JSONField(required=True)
 
     class Meta:
         model = Face

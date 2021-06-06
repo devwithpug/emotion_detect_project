@@ -49,15 +49,18 @@ class Model(nn.Module):
 
 model = Model()
 
-model.load_state_dict(torch.load('/Users/subin/PycharmProjects/emotion_detect_project/django/faceproject/templates/model.pt', map_location=DEVICE))
+model.load_state_dict(torch.load('/Volumes/SSD/repo/emotion_detect_project/django/faceproject/templates/model.pt', map_location=DEVICE))
 # model.load_state_dict(torch.load('/templates/model.pt', map_location=DEVICE))
 model.eval()
 
-facecasc = cv2.CascadeClassifier("/Users/subin/PycharmProjects/emotion_detect_project/django/faceproject/templates/haarcascade_frontalface_default.xml")
+facecasc = cv2.CascadeClassifier("/Volumes/SSD/repo/emotion_detect_project/django/faceproject/templates/haarcascade_frontalface_default.xml")
 # facecasc = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
 
 def do(encoded_string):
+    print(encoded_string)
+    encoded_string = encoded_string[0]
+
     nparr = np.asarray(bytearray(base64.b64decode(encoded_string)), dtype=np.uint8)
     nparr = cv2.resize(nparr, (48, 48), 0)
 
