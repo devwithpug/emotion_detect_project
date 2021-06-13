@@ -9,7 +9,7 @@
 ## 웹 페이지 제작
 1. 페이지에 WebRTC 라이브러리를 이용한 실시간 캠 화면 페이지에 표시하기
 2. 캠 화면 캡쳐하여 스프링 서버에 POST 요청
-```jquery-css
+```js
 if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
         var video = document.getElementById('video');
@@ -44,7 +44,7 @@ document.getElementById("webcamBtn").addEventListener("click",function() {
 });
 ```
 3. 결과 그래프로 출력 (미완성)
-```jquery-css
+```js
 var ctx = document.getElementById('myChart');
 var myChart = new Chart(ctx, {
     type: 'bar',
