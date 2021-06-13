@@ -91,6 +91,11 @@ var myChart = new Chart(ctx, {
 1. JQuery, Ajax를 처음 다뤘기에 POST 요청을 구현하는데 상당 시간 소요 
 2. CSS, HTML 정렬 및 배치 관련 지식 부족으로 상당 시간 소요
 
+## 참고자료
+[웹캠 사용하기](https://ddochi-dev.tistory.com/entry/HTML-웹캠-사용하기)
+[JQuery, Ajax](http://blog.naver.com/PostView.nhn?blogId=kkforgg&logNo=220358259789)
+[차트 그래프](https://coding-restaurant.tistory.com/65)
+
 ## 다음 주
 - 결과 출력 그래프 연동
 - 특정 시간마다(ex 3초) 결과를 자동으로 출력 
