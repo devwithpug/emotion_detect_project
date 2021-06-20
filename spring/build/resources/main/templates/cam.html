@@ -44,6 +44,7 @@
         navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
             var video = document.getElementById('video');
             video.srcObject = stream;
+            // video.play();
         });
     }
 
@@ -59,7 +60,7 @@
             datasets: [{
                 hidden: false,
                 label: 'percent',
-                data: [0, 0, 0, 0, 0, 0, 0],
+                data: [12, 19, 3, 5, 2, 3, 90],
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.2)',
                     'rgba(54, 162, 235, 0.2)',
@@ -95,6 +96,7 @@
 
     var getData = function () {
         context.drawImage(video,0,0,960,720);
+        // console.log(canvas.toDataURL('image/png'));
         var image = canvas.toDataURL('image/png');
         $('#image').val(image);
         $.ajax({

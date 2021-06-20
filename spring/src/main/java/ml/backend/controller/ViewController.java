@@ -7,16 +7,15 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 @Controller
 @Slf4j
@@ -29,12 +28,9 @@ public class ViewController {
     }
 
     @PostMapping("/image")
-    public String imageUpload(String image) throws IOException {
+    @ResponseBody
+    public ArrayList<Integer> imageUpload(String image) throws IOException {
         image = image.substring(image.lastIndexOf("base64,")+7);
-        log.info(image);
-
-//        StringBuilder sb = new StringBuilder();
-//        sb.append(StringUtils.newStringUtf8(Base64.encodeBase64(image.getBytes(), false)));
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("content", image);
@@ -49,18 +45,18 @@ public class ViewController {
         RestTemplate rt = new RestTemplate();
 
         try {
-            ResponseEntity<String> response = rt.exchange(
+            ResponseEntity<LinkedHashMap> response = rt.postForEntity(
                     "http://localhost:8000/api/face/",
-                    HttpMethod.POST,
                     entity,
-                    String.class
+                    LinkedHashMap.class
             );
-            log.info(response.getBody());
+            ArrayList<Integer> result = (ArrayList<Integer>) response.getBody().get("result");
+            log.info("result: " + result.toString());
+            return result;
         } catch (Exception e) {
             log.warn(e.toString());
         }
-
-        return "redirect:/test/image";
+        return null;
     }
 
     @GetMapping("/cam")
